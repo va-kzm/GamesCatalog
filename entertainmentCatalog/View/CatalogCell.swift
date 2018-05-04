@@ -13,13 +13,26 @@ class CatalogCell: UITableViewCell {
     @IBOutlet weak var posterImageView: UIImageView!
     @IBOutlet weak var titleLbl: UILabel!
     @IBOutlet weak var genreLbl: UILabel!
+    @IBOutlet weak var preGenreLbl: UILabel!
     @IBOutlet weak var releaseYearLbl: UILabel!
+    @IBOutlet weak var preReleaseYearLbl: UILabel!
     @IBOutlet weak var tapDescriptionLbl: UILabel!
     
     override func awakeFromNib() {
         super.awakeFromNib()
         tapDescriptionLbl.layer.cornerRadius = 5
         tapDescriptionLbl.clipsToBounds = true
+        
+        let bounds = UIScreen.main.bounds
+        let screenWidth = bounds.size.width
+        
+        if screenWidth == 320 {
+            titleLbl.adjustsFontSizeToFitWidth = true
+            genreLbl.adjustsFontSizeToFitWidth = true
+            releaseYearLbl.adjustsFontSizeToFitWidth = true
+            preGenreLbl.adjustsFontSizeToFitWidth = true
+            preReleaseYearLbl.adjustsFontSizeToFitWidth = true
+        }
         
     }
 

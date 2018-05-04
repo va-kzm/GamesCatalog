@@ -15,6 +15,8 @@ class DescriptionVC: UIViewController {
     @IBOutlet weak var releaseYearTextField: UITextField!
     @IBOutlet weak var genreTextfield: UITextField!
     @IBOutlet weak var addToCatalogBtn: UIButton!
+    @IBOutlet weak var scrollView: UIScrollView!
+    @IBOutlet weak var contentView: UIView!
     
     // Properties
     let gameGenres = ["Action", "Action-Adventure", "Adventure", "Role-Playing", "Simulation", "Strategy", "Sports"]
@@ -44,9 +46,8 @@ class DescriptionVC: UIViewController {
         releaseYearTextField.delegate = self
         genreTextfield.delegate = self
         
-        navigationItem.title = "Add description"
+        navigationItem.title = "Description"
         
-        addToCatalogBtn.bindToKeyboard()
         configureView()
         createReleaseYearPicker()
         createGenrePicker()
@@ -58,6 +59,30 @@ class DescriptionVC: UIViewController {
         descriptionTextView.layer.borderWidth = 0.5
         descriptionTextView.layer.cornerRadius = 5
         descriptionTextView.clipsToBounds = true
+        
+        let addToCatalogBtn2 = UIButton(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 50))
+        let attributedTitle = NSAttributedString(string: "ADD TO CATALOG", attributes: [NSAttributedStringKey.font : UIFont(name: "AvenirNext-Bold", size: 22)!, NSAttributedStringKey.foregroundColor: UIColor.white])
+        
+        addToCatalogBtn2.backgroundColor = #colorLiteral(red: 0.2745098039, green: 0.8431372549, blue: 0.2431372549, alpha: 1)
+        addToCatalogBtn2.setAttributedTitle(attributedTitle, for: .normal)
+        addToCatalogBtn2.addTarget(self, action: #selector(handleAddToCatalogBtn2), for: .touchUpInside)
+        
+        descriptionTextView.inputAccessoryView = addToCatalogBtn2
+        releaseYearTextField.inputAccessoryView = addToCatalogBtn2
+        genreTextfield.inputAccessoryView = addToCatalogBtn2
+        
+        let tapViewRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleViewTap))
+        tapViewRecognizer.numberOfTapsRequired = 1
+        tapViewRecognizer.numberOfTouchesRequired = 1
+        view.addGestureRecognizer(tapViewRecognizer)
+    }
+    
+    @objc func handleAddToCatalogBtn2() {
+        doAddToCatalog()
+    }
+    
+    @objc func handleViewTap() {
+        view.endEditing(true)
     }
     
     func createReleaseYearPicker() {
@@ -78,11 +103,35 @@ class DescriptionVC: UIViewController {
         genreTextfield.inputView = genrePicker
     }
     
+    func doAddToCatalog() {
+        if let descriptionText = descriptionTextView.text, descriptionText != "", descriptionText != "                                                                      Description of the Game" {
+            if let releaseYearText = releaseYearTextField.text, releaseYearText != "" {
+                if let genreText = genreTextfield.text, genreText != "" {
+                    gameInformation?.description = descriptionText
+                    gameInformation?.releaseYear = releaseYearText
+                    gameInformation?.genre = genreText
+                    
+                    saveToCoreData { (success) in
+                        if success {
+                            self.navigationController?.popToRootViewController(animated: true)
+                        }
+                    }
+                } else {
+                    emptyFieldAlert()
+                }
+            } else {
+                emptyFieldAlert()
+            }
+        } else {
+            emptyFieldAlert()
+        }
+    }
+    
     func saveToCoreData(completion: @escaping (_ completed: Bool) -> ()) {
         guard let managedContext = appDelegate?.persistentContainer.viewContext else { return }
         
         let game = Game(context: managedContext)
-        game.gamePoster = UIImagePNGRepresentation((gameInformation?.image!)!)
+        game.gamePoster = UIImageJPEGRepresentation((gameInformation?.image)!, 0.5)
         game.gameTitle = gameInformation?.title
         game.gameDescription = gameInformation?.description
         game.gameRealeaseYear = gameInformation?.releaseYear
@@ -109,27 +158,7 @@ class DescriptionVC: UIViewController {
     
     // Actions
     @IBAction func addToCatalog(_ sender: Any) {
-        if let descriptionText = descriptionTextView.text, descriptionText != "", descriptionText != "                                                                      Description of the Game" {
-            if let releaseYearText = releaseYearTextField.text, releaseYearText != "" {
-                if let genreText = genreTextfield.text, genreText != "" {
-                    gameInformation?.description = descriptionText
-                    gameInformation?.releaseYear = releaseYearText
-                    gameInformation?.genre = genreText
-                    
-                    saveToCoreData { (success) in
-                        if success {
-                            self.navigationController?.popToRootViewController(animated: true)
-                        }
-                    }
-                } else {
-                    emptyFieldAlert()
-                }
-            } else {
-                emptyFieldAlert()
-            }
-        } else {
-            emptyFieldAlert()
-        }
+        doAddToCatalog()
     }
 }
 
@@ -140,6 +169,7 @@ extension DescriptionVC: UITextViewDelegate, UITextFieldDelegate {
             descriptionTextView.textColor = UIColor.black
             descriptionTextView.textAlignment = .left
         }
+        addToCatalogBtn.isHidden = true
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -147,6 +177,9 @@ extension DescriptionVC: UITextViewDelegate, UITextFieldDelegate {
             descriptionTextView.text = "                                                                      Description of the Game"
             descriptionTextView.textAlignment = .center
             descriptionTextView.textColor = #colorLiteral(red: 0.7960784314, green: 0.7960784314, blue: 0.8196078431, alpha: 1)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            self.addToCatalogBtn.isHidden = false
         }
     }
     
@@ -157,6 +190,20 @@ extension DescriptionVC: UITextViewDelegate, UITextFieldDelegate {
             } else if textField == genreTextfield {
                 genreTextfield.text = gameGenres[0]
             }
+        }
+        
+        if view.frame.size.width == 320 {
+            scrollView.setContentOffset(CGPoint(x: 0, y: releaseYearTextField.frame.origin.y / 2), animated: true)
+        }
+        addToCatalogBtn.isHidden = true
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if view.frame.size.width == 320 {
+            scrollView.scrollRectToVisible(CGRect(x: 0, y: 0, width: view.frame.size.width, height: 10), animated: true)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.07) {
+            self.addToCatalogBtn.isHidden = false
         }
     }
 }

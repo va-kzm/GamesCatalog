@@ -73,28 +73,6 @@ class CatalogVC: UIViewController {
         print("!!!!!!! release \(releaseYearFilter.count)")
         print("!!!!!!! genre \(genreFilter.count)")
         
-//        for i in titleFilter {
-//            filteredGames.append(i)
-//        }
-//
-//        for i in descriptionFilter {
-//            if !filteredGames.contains(i) {
-//                filteredGames.append(i)
-//            }
-//        }
-//
-//        for i in releaseYearFilter {
-//            if !filteredGames.contains(i) {
-//                filteredGames.append(i)
-//            }
-//        }
-//
-//        for i in genreFilter {
-//            if !filteredGames.contains(i) {
-//                filteredGames.append(i)
-//            }
-//        }
-        
         for i in allFilter {
             if !filteredGames.contains(i) {
                 filteredGames.append(i)
@@ -110,10 +88,12 @@ class CatalogVC: UIViewController {
     
     func fetchGameInfoData() {
         fetch { (success) in
-            if self.games.count >= 1 {
-                self.welcomeView.isHidden = true
-            } else {
-                self.welcomeView.isHidden = false
+            if success {
+                if self.games.count >= 1 {
+                    self.welcomeView.isHidden = true
+                } else {
+                    self.welcomeView.isHidden = false
+                }
             }
         }
     }

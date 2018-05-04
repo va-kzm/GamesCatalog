@@ -13,6 +13,8 @@ class ImageAndTitleVC: UIViewController {
     @IBOutlet weak var gameImageView: UIImageView!
     @IBOutlet weak var titleTextField: UITextField!
     @IBOutlet weak var nextBtn: UIButton!
+    @IBOutlet weak var scrollView: UIScrollView!
+    @IBOutlet weak var contentView: UIView!
     
     // Properties
     var gameInformation = GameInfo()
@@ -23,20 +25,9 @@ class ImageAndTitleVC: UIViewController {
         configureView()
         
         imagePicker.delegate = self
-        nextBtn.bindToKeyboard()
+        titleTextField.delegate = self
+        //nextBtn.bindToKeyboard()
     }
-    
-    // Remove backBarButtonItem.title from the next viewController.
-    
-//    override func viewWillAppear(_ animated: Bool) {
-//        super.viewWillAppear(animated)
-//        navigationItem.title = "Add image and title"
-//    }
-//
-//    override func viewWillDisappear(_ animated: Bool) {
-//        super.viewWillDisappear(animated)
-//        navigationItem.title = "Back"
-//    }
     
     // Methods
     func configureView() {
@@ -45,14 +36,52 @@ class ImageAndTitleVC: UIViewController {
         tapImageRecognizer.numberOfTouchesRequired = 1
         gameImageView.addGestureRecognizer(tapImageRecognizer)
         
-        navigationItem.title = "Add image and title"
+        navigationItem.title = "Image and title"
+        
+        let nextBtn2 = UIButton(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 50))
+        let attributedTitle = NSAttributedString(string: "NEXT", attributes: [NSAttributedStringKey.font : UIFont(name: "AvenirNext-Bold", size: 22)!, NSAttributedStringKey.foregroundColor: UIColor.white])
+        
+        nextBtn2.backgroundColor = #colorLiteral(red: 0.2745098039, green: 0.8431372549, blue: 0.2431372549, alpha: 1)
+        nextBtn2.setAttributedTitle(attributedTitle, for: .normal)
+        nextBtn2.addTarget(self, action: #selector(handleNextBarBtnItem), for: .touchUpInside)
+
+        titleTextField.inputAccessoryView = nextBtn2
+        
+        let tapViewRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleViewTap))
+        tapViewRecognizer.numberOfTapsRequired = 1
+        tapViewRecognizer.numberOfTouchesRequired = 1
+        view.addGestureRecognizer(tapViewRecognizer)
     }
     
     @objc func handleImageTap() {
-        imagePicker.allowsEditing = false
-        imagePicker.sourceType = .photoLibrary
-        
-        present(imagePicker, animated: true, completion: nil)
+        if UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.photoLibrary) {
+            imagePicker.allowsEditing = false
+            imagePicker.sourceType = .photoLibrary
+            
+            present(imagePicker, animated: true, completion: nil)
+        }
+    }
+    
+    @objc func handleNextBarBtnItem() {
+        if let titleText = titleTextField.text, titleText != "" {
+            let controller = storyboard?.instantiateViewController(withIdentifier: DESCRIPTION_VC_ID) as! DescriptionVC
+            gameInformation.title = titleText
+            gameInformation.image = gameImageView.image
+            controller.gameInformation = gameInformation
+            controller.navigationItem.backBarButtonItem?.title = "Back"
+            navigationController?.pushViewController(controller, animated: true)
+        } else {
+            let alert = UIAlertController(title: "A Game with no name?", message: "You probably forgot to add the name of the game 🤓", preferredStyle: .alert)
+            let action = UIAlertAction(title: "Maybe", style: .default, handler: nil)
+            alert.addAction(action)
+            present(alert, animated: true, completion: nil)
+        }
+    }
+    
+    @objc func handleViewTap() {
+        if view.frame.size.width == 320 {
+            view.endEditing(true)
+        }
     }
     
     // Actions
@@ -79,10 +108,29 @@ extension ImageAndTitleVC: UIImagePickerControllerDelegate, UINavigationControll
             gameImageView.contentMode = .scaleAspectFill
             gameImageView.image = pickedImage
         }
+        
         dismiss(animated: true, completion: nil)
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         dismiss(animated: true, completion: nil)
+    }
+}
+
+extension ImageAndTitleVC: UITextFieldDelegate {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        if view.frame.size.width == 320 {
+            scrollView.setContentOffset(CGPoint(x: 0, y: titleTextField.frame.origin.y / 2), animated: true)
+        }
+        nextBtn.isHidden = true
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if view.frame.size.width == 320 {
+            scrollView.scrollRectToVisible(CGRect(x: 0, y: 0, width: view.frame.size.width, height: 50), animated: true)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.07) {
+            self.nextBtn.isHidden = false
+        }
     }
 }
